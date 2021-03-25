@@ -6,13 +6,15 @@ public class NAP {
     BloomFilter bloom; //bloom filter for specifying content attached to the NAP
     ArrayList<String> content_ids; //content ids attached to the NAP
     int total_removals,update_factor;
+    String id;
 
     //constructor 
-    public NAP(int bloom_size, int bloom_hashes, int update_factor) {
+    public NAP(int bloom_size, int bloom_hashes, int update_factor, String id) {
         content_ids = new ArrayList<String>();
         bloom = new BloomFilter(bloom_size,bloom_hashes);
         this.update_factor = update_factor;
         total_removals = 0;
+        this.id = id;
     }
 
     /* Attach a content id to this NAP */
@@ -30,6 +32,14 @@ public class NAP {
             bloom.removeAll();
             bloom.add(content_ids);
         }
+    }
+
+    public int total_ids() {
+        return content_ids.size();
+    }
+
+    public String id() {
+        return id;
     }
 
 
