@@ -1,5 +1,7 @@
 import java.util.ArrayList;
 import java.util.Random;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 /* RUN: java Main #_total_naps #_bloom_size #_bloom_hashes */
 public class Main {
     public static void main(String args[]) {
@@ -21,6 +23,7 @@ public class Main {
         for(int n = 0; n <total_naps; n++ ) naps[n] = new NAP(bloom_size,bloom_hashes,1,Integer.toString(n));
         ArrayList<String> ids = new ArrayList<String>(); // the content ids
         IdGenerator gen = new IdGenerator(); // generates 4 byte string ids
+        Random rand = new Random(); // to attach content id to a random NAP 
     
         for(int i = 0; i <total_ids; i++) {
             String id = gen.generate();
@@ -30,17 +33,26 @@ public class Main {
                 continue;
             }
             //add the id to a Random NAP
-            Random rand = new Random();
-            int kk = rand.nextInt(total_naps);
-            naps[kk].add_content(id);
-            System.out.println("must be true "+naps[kk].isAttached(id));
-            System.out.println(naps[kk].isAttached("HAHA"));
+            naps[rand.nextInt(total_naps)].add_content(id);
         }
         System.out.println("DONE: Total ids generated: "+ids.size());
         for(NAP nap : naps) System.out.println("Total ids in NAP #"+nap.id()+" = "+nap.total_ids());
 
+        System.out.println("Zipfian distribution");
+        double exponent =  1;
+        BigDecimal sum = new BigDecimal("0"); 
+        for(int i = 1; i < total_ids+1; i++) {
+            //System.out.println(new BigDecimal(1/Math.pow(i,exponent)));
+            sum = sum.add(new BigDecimal(1/Math.pow(i,exponent)));
+            //System.out.println(sum);
+        }
+        System.out.println("Sum = "+sum);
+        for(int i = 1; i < total_ids+1; i++) {
+            BigDecimal zipf = new BigDecimal(1/Math.pow(i,exponent)).divide(sum,RoundingMode.HALF_UP);
+            System.out.println("for rank = "+i+" zipf = "+zipf);
+        }
 
-        System.out.println("PREPARING BLOOM FILTERS MAPPING");
+        System.out.println("A random bigdecimal = "+new BigDecimal(Math.random()));
 
     }
 }
