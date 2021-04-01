@@ -1,9 +1,9 @@
-/* A Bloom Filter data structure for content IDs */
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 
+/* A Bloom Filter data structure for content IDs */
 public class BloomFilter {
 
     private boolean[] bloom;

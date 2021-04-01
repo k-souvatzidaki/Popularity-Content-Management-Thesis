@@ -1,4 +1,5 @@
 import java.util.Random;
+
 /* Generate ASCII character ids of length 4 (32 bits) */
 public class IdGenerator {
 
