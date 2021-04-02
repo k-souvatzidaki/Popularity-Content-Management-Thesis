@@ -17,15 +17,20 @@ public class Zipf {
         for(int i = 1; i < n+1; i++) {
             temp = temp.add(new BigDecimal(1/Math.pow(i,exponent)));
         }
-        sum = temp;
+        sum = temp.setScale(32,RoundingMode.HALF_EVEN);
     }
 
     public BigDecimal getZipfVal(int rank) {
-        return new BigDecimal(1/Math.pow(rank,exponent)).divide(sum,64,RoundingMode.HALF_EVEN);
+        return new BigDecimal(1/Math.pow(rank,exponent)).divide(sum,32,RoundingMode.HALF_EVEN);
     }
 
     public int getRank(BigDecimal zipfval) {
-        BigDecimal temp = BigDecimal.ONE.divide(sum.multiply(zipfval),64,RoundingMode.HALF_EVEN);
+        //System.out.println("INSIDE GETRANK WITH "+zipfval);
+        //System.out.println(sum);
+        BigDecimal temp = BigDecimal.ONE.divide(sum.multiply(zipfval),32,RoundingMode.HALF_EVEN);
+        //System.out.println(temp);
+        double result = (new BigDecimal(Math.pow(temp.doubleValue(),1/exponent))).doubleValue();
+        //System.out.println(result);
         return (int)Math.ceil((new BigDecimal(Math.pow(temp.doubleValue(),1/exponent))).doubleValue());
     }
 }

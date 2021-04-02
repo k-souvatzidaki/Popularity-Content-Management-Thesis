@@ -6,6 +6,8 @@ import java.math.RoundingMode;
 public class Main {
     public static void main(String args[]) {
 
+        /*
+
         final int total_naps = 10; //the total number of NAPs
         final int bloom_size = 10; //the size of the bloom filters
         final int bloom_hashes = 1; //how many times ids are hashed in the bloom filter
@@ -51,13 +53,17 @@ public class Main {
         System.out.println("Printing random bigdecimal ranks");
         BigDecimal test,temp,newrank;
         for(int j = 0; j < 1000; j++) {
-            test = new BigDecimal(Math.random());
+            test = new BigDecimal("0.000779856905809506173454792588017880916595458984375");
             temp = BigDecimal.ONE.divide(sum.multiply(test),64,RoundingMode.HALF_EVEN);
             newrank = new BigDecimal(Math.pow(temp.doubleValue(),1/exponent));
             System.out.println(Math.ceil(newrank.doubleValue()));
         }
 
         */
+        BigDecimal test = new BigDecimal("0.00077985690580950617345479258801788091659545898437500");
+        
+        System.out.println(new Zipf(1.3,100).getRank(test));
+
         
     }
 }
