@@ -62,9 +62,19 @@ public class BloomFilter {
         int value = hashint.intValue();
         if(value < 0) value*=-1;
         value = value % size; //in range
-        //System.out.println("Index in bloom = "+value);
         
         return value;
+    }
+
+    /* toString method */
+    @Override
+    public String toString() {
+        String result= "";
+        for(boolean b : bloom) {
+            if(b == true) result+= "1 ";
+            else result += "0 ";
+        }
+        return result;
     }
 
 }

@@ -1,7 +1,7 @@
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-//Zipf's distribution implementation
+/* Zipf's distribution implementation */
 public class Zipf {
 
     final double exponent;
@@ -20,17 +20,15 @@ public class Zipf {
         sum = temp.setScale(32,RoundingMode.HALF_EVEN);
     }
 
+    /* Get Zipf frequency value given a rank */
     public BigDecimal getZipfVal(int rank) {
         return new BigDecimal(1/Math.pow(rank,exponent)).divide(sum,32,RoundingMode.HALF_EVEN);
     }
 
+    /* Get rank given a Zipf frequency value */
     public int getRank(BigDecimal zipfval) {
-        //System.out.println("INSIDE GETRANK WITH "+zipfval);
-        //System.out.println(sum);
         BigDecimal temp = BigDecimal.ONE.divide(sum.multiply(zipfval),32,RoundingMode.HALF_EVEN);
-        //System.out.println(temp);
         double result = (new BigDecimal(Math.pow(temp.doubleValue(),1/exponent))).doubleValue();
-        //System.out.println(result);
         return (int)Math.ceil((new BigDecimal(Math.pow(temp.doubleValue(),1/exponent))).doubleValue());
     }
 }

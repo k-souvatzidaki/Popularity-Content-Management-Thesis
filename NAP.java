@@ -34,14 +34,15 @@ public class NAP {
         }
     }
 
+    /* Get # of total content ids in this NAP */
     public int total_ids() {
         return content_ids.size();
     }
 
+    /* Get NAP id */
     public String id() {
         return id;
     }
-
 
     /* Check if content is actually attached to the NAP */
     public boolean isAttached(String id) {
@@ -51,6 +52,21 @@ public class NAP {
     /* Update with content located on this NAP */
     public BloomFilter update() {
         return bloom;
+    }
+
+    /* Get list of content ids in this NAP */ 
+    public ArrayList<String> getContent() {
+        return content_ids;
+    }
+
+    /* toString method */
+    @Override
+    public String toString() {
+        String result = "";
+        result += "Total ids in NAP #"+id+" = "+content_ids.size()+"\n{";
+        for(String id : content_ids) result+=id+" ";
+        result+="}\nBloom Filter = "+bloom;
+        return result;
     }
     
 }
