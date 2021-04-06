@@ -7,10 +7,10 @@ import java.math.RoundingMode;
 public class NRS {
 
     final int total_naps = 5; //the total number of NAPs
-    final int bloom_size = 100; //the size of the bloom filters
+    final int bloom_size = 10; //the size of the bloom filters
     final int bloom_hashes = 1; //how many times ids are hashed in the bloom filter
     final int total_ids = 100; //the total number of content ids to be generated
-    final double exponent =  1.3; //the Zipf distribution exponent
+    final double exponent =  0.8; //the Zipf distribution exponent
     final int total_queries = 100; //the number of queries to be generated
     final int id_len = 4; //the length of ids in bytes
 
@@ -48,7 +48,7 @@ public class NRS {
             naps[rand.nextInt(total_naps)].add_content(id);
         }
         System.out.println("Total ids generated: "+ids.size()+"\n=======================");
-        for(NAP nap : naps) System.out.println(nap+"\n-----------------------");
+        //for(NAP nap : naps) System.out.println(nap+"\n-----------------------");
 
         //initialize counters for total queries per rank
         counters = new int[total_ids];
@@ -60,10 +60,10 @@ public class NRS {
 
         BigDecimal temp; int rank; String id;
         Zipf zipf = new Zipf(exponent,total_ids); //Zipfian distribution for popularity aware query generation
-        /* System.out.println("ALL ZIPF VALUES");
+        System.out.println("ALL ZIPF VALUES");
         for(int a = 1; a < total_ids+1; a++) {
             System.out.println("for rank = "+a+" zipf = "+zipf.getZipfVal(a));
-        } */
+        }
 
         int false_pos;
         for(int k = 0; k < total_queries; k++) {
@@ -72,13 +72,14 @@ public class NRS {
                 temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
             rank = zipf.getRank(temp); //get rank based on zipf value
             id = ids.get(rank-1); counters[rank-1]++; //get id and increase counter
+            System.out.println("Decimal "+temp+" matches rank = "+rank);
 
             //query execution - check bloom filters for the id
             false_pos = 0;
             for(NAP nap: naps) {
                 if(nap.update().exists(id)) { //check if id exists in bloom filter
                     if(nap.isAttached(id)) { //check if id actually exists in nap
-                        System.out.println("Found id "+id+" in NAP "+nap.id()+" after "+false_pos+" tries");
+                        //System.out.println("Found id "+id+" in NAP "+nap.id()+" after "+false_pos+" tries");
                         break;
                     } else false_pos++;
                 }
@@ -87,8 +88,8 @@ public class NRS {
         }
         
         System.out.println("\n\nQUERY GENERATION COMPLETED. RESULTS:\n================================");
-        System.out.println("QUERIES PER RANK");
-        for(int c = 0; c < total_ids; c++) System.out.println("Rank #"+(c+1)+" : "+counters[c]+" queries");
+        //System.out.println("QUERIES PER RANK");
+        //for(int c = 0; c < total_ids; c++) System.out.println("Rank #"+(c+1)+" : "+counters[c]+" queries");
 
         System.out.println("\nTOTAL FALSE POSITIVES: "+ false_positives);
     }
