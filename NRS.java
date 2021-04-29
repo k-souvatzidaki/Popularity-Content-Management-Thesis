@@ -8,13 +8,13 @@ public class NRS {
     final int experiments = 15; //total # of experiments
 
     final double exponent =  0.8; //the Zipf distribution exponent
-    final int total_ids = 10000; //the total number of content ids to be generated
+    final int total_ids = 10000; //the total number of content ids to be generated (n)
     final int total_queries = 100; //the number of queries to be generated
     final int id_len = 4; //the length of ids in bytes
 
     final int total_naps = 20; //the total number of NAPs
-    final int bloom_size = 100; //the size of the bloom filters (k)
-    final int bloom_hashes = 1; //how many times ids are hashed in the bloom filter (m)
+    final int bloom_size = 100; //the size of the bloom filters (m)
+    final int bloom_hashes = 1; //number of hash functions in the bloom filter (k)
 
     int false_positives = 0;
     int false_positives_queries = 0;
@@ -56,7 +56,7 @@ public class NRS {
 
 
     /* Start the simulation: generate queries for random ids based on Zipf frequency distribution 
-        Execute many experiments for each #_naps */
+       Execute many experiments for each #_naps */
     public void start() {
         BigDecimal temp; int rank; String id;
         Zipf zipf = new Zipf(exponent,total_ids); //Zipfian distribution for popularity aware query generation

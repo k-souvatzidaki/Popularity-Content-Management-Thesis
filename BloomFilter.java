@@ -1,30 +1,42 @@
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.math.BigInteger;
-import java.util.ArrayList;
+import java.util.*;
 
 /* A Bloom Filter data structure for content IDs */
 public class BloomFilter {
 
     private boolean[] bloom;
-    private int size,hashes;
+    private int m,k;
+    private int[] functions_integers;
 
-    //constructor
-    public BloomFilter(int size,int hashes) {
-        bloom = new boolean[size]; //initialized with false
-        this.size = size;
-        this.hashes = hashes;
+    public BloomFilter(int m,int k) {
+        bloom = new boolean[m]; //initialized with false
+        this.m = m;
+        this.k = k;
+        functions_integers = new int[k]; //a random number for each hash function
+        for(int i = 0; i < k; i++) {
+            functions_integers[i] = new Random().nextInt(m);
+            System.out.println(functions_integers[i]);
+        }
+            
     }
 
     /* Returns true if the id MIGHT exist in the filter (false positives)
        Returns false if the id DOESN'T exist in the filter (no false negatives) */
     public boolean exists(String id){
-        return bloom[hash(id)];
+        for(int h = 0; h < k; h++) {
+            if(bloom[hash(id,functions_integers[h])]==false) return false;
+        }
+        return true;
     }
 
     /* Add id(s) in the filter */
     public void add(String id) {
-        bloom[hash(id)] = true;
+        //compute all hash functions
+        for(int h = 0; h < k; h++) {
+            bloom[hash(id,functions_integers[h])] = true;
+        }
     }
     public void add(ArrayList<String> ids) {
         for(String id : ids) this.add(id);
@@ -32,7 +44,7 @@ public class BloomFilter {
 
     /* remove all idd from the bloom filter */
     public void removeAll() {
-        bloom = new boolean[size];
+        bloom = new boolean[m];
     }
 
     /* Bloom filter bit array getter */
@@ -42,7 +54,7 @@ public class BloomFilter {
 
     /* Hash function to get the index of an id in the bloom filter. Using SHA-1.
        Hash performed as many times as the value of class variable "hashes" */
-    public int hash(String id) {
+    public int hash(String id,int function_integer) {
         MessageDigest message = null;
         try {
             message = MessageDigest.getInstance("SHA-1"); 
@@ -52,16 +64,15 @@ public class BloomFilter {
         
         byte[] hash = null;
         String temp = id;
-        //get all hashes 
-        for(int i = 0; i < hashes; i++) {
-            hash = message.digest(temp.getBytes());
-            temp = new String(hash);
-        }
+        hash = message.digest(temp.getBytes());
+        temp = new String(hash);
+        
         //convert to integer in range [0,size-1]
         BigInteger hashint = new BigInteger(1, hash); 
+        hashint.add(BigInteger.valueOf(function_integer));
         int value = hashint.intValue();
         if(value < 0) value*=-1;
-        value = value % size; //in range
+        value = value % m; //in range
         
         return value;
     }
