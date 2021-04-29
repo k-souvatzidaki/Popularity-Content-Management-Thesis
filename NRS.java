@@ -5,21 +5,25 @@ import java.math.RoundingMode;
 
 /* A Name Resolution System (NRS) */
 public class NRS {
+    final int experiments = 15; //total # of experiments
 
-    final int total_naps = 5; //the total number of NAPs
-    final int bloom_size = 10; //the size of the bloom filters
-    final int bloom_hashes = 1; //how many times ids are hashed in the bloom filter
-    final int total_ids = 100; //the total number of content ids to be generated
     final double exponent =  0.8; //the Zipf distribution exponent
+    final int total_ids = 10000; //the total number of content ids to be generated
     final int total_queries = 100; //the number of queries to be generated
     final int id_len = 4; //the length of ids in bytes
 
-    int false_positives = 0; //total number of false positives from content queries to NAPs
+    final int total_naps = 20; //the total number of NAPs
+    final int bloom_size = 100; //the size of the bloom filters (k)
+    final int bloom_hashes = 1; //how many times ids are hashed in the bloom filter (m)
+
+    int false_positives = 0;
+    int false_positives_queries = 0;
+    int total_false_positives = 0;
+    int total_false_positives_queries = 0;
     NAP[] naps; //all NAPs
     ArrayList<String> ids; //list of all content ids
     int[] counters; //total queries per rank/id
 
-    //constructor 
     public NRS() {
         prepare();
         start();
@@ -27,8 +31,6 @@ public class NRS {
 
     /* Prepare the simulation: create NAPs, create contend IDs, attach IDs to NAPs  */
     public void prepare() {
-        System.out.println("PREPARING SIMULATION . . .");
-
         //Initialize Network Access Points
         naps = new NAP[total_naps];
         for(int n = 0; n <total_naps; n++ ) naps[n] = new NAP(bloom_size,bloom_hashes,1,Integer.toString(n));
@@ -45,53 +47,51 @@ public class NRS {
                 continue;
             }
             //add the id to a Random NAP
-            naps[rand.nextInt(total_naps)].add_content(id);
+            int rand_index = rand.nextInt(total_naps);
+            naps[rand_index].add_content(id);
         }
-        System.out.println("Total ids generated: "+ids.size()+"\n=======================");
-        //for(NAP nap : naps) System.out.println(nap+"\n-----------------------");
-
         //initialize counters for total queries per rank
         counters = new int[total_ids];
     }
 
-    /* Start the simulation: generate queries for random ids based on Zipf frequency distribution */
-    public void start() {
-        System.out.println("\nSTART GENERATING QUERIES . . .");
 
+    /* Start the simulation: generate queries for random ids based on Zipf frequency distribution 
+        Execute many experiments for each #_naps */
+    public void start() {
         BigDecimal temp; int rank; String id;
         Zipf zipf = new Zipf(exponent,total_ids); //Zipfian distribution for popularity aware query generation
-        System.out.println("ALL ZIPF VALUES");
-        for(int a = 1; a < total_ids+1; a++) {
-            System.out.println("for rank = "+a+" zipf = "+zipf.getZipfVal(a));
-        }
-
         int false_pos;
-        for(int k = 0; k < total_queries; k++) {
-            temp = new BigDecimal("0.0");
-            while(temp.compareTo(zipf.getZipfVal(total_ids)) < 0)
-                temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
-            rank = zipf.getRank(temp); //get rank based on zipf value
-            id = ids.get(rank-1); counters[rank-1]++; //get id and increase counter
-            System.out.println("Decimal "+temp+" matches rank = "+rank);
 
-            //query execution - check bloom filters for the id
-            false_pos = 0;
-            for(NAP nap: naps) {
-                if(nap.update().exists(id)) { //check if id exists in bloom filter
-                    if(nap.isAttached(id)) { //check if id actually exists in nap
-                        //System.out.println("Found id "+id+" in NAP "+nap.id()+" after "+false_pos+" tries");
-                        break;
-                    } else false_pos++;
+        for(int e=1; e <=experiments; e++) {
+            false_positives = 0;
+            false_positives_queries = 0;
+            for(int k = 0; k < total_queries; k++) {
+                temp = new BigDecimal("0.0");
+                while(temp.compareTo(zipf.getZipfVal(total_ids)) < 0)
+                    temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
+                rank = zipf.getRank(temp); //get rank based on zipf value
+                id = ids.get(rank-1); counters[rank-1]++; //get id and increase counter
+    
+                //query execution - check bloom filters for the id
+                false_pos = 0;
+                for(NAP nap: naps) {
+                    if(nap.update().exists(id)) { //check if id exists in bloom filter
+                        if(nap.isAttached(id) /*if id actually exists in NAP*/) break;
+                        else false_pos++;
+                    }
                 }
+                false_positives += false_pos; //update total false positives
+                if(false_pos > 0) false_positives_queries++;
             }
-            false_positives += false_pos; //update total false positives
+            System.out.println("EXPERIMENT "+e+":");
+            System.out.println("TOTAL FALSE POSITIVES: "+ false_positives);
+            System.out.println("TOTAL #QUERIES WITH AT LEAST ONE FALSE POSITIVE: "+ false_positives_queries+" OUT OF "+total_queries+" QUERIES\n");    
+            total_false_positives+=false_positives;
+            total_false_positives_queries+=false_positives_queries;
         }
-        
-        System.out.println("\n\nQUERY GENERATION COMPLETED. RESULTS:\n================================");
-        //System.out.println("QUERIES PER RANK");
-        //for(int c = 0; c < total_ids; c++) System.out.println("Rank #"+(c+1)+" : "+counters[c]+" queries");
 
-        System.out.println("\nTOTAL FALSE POSITIVES: "+ false_positives);
+        System.out.println("AVERAGE # OF FALSE POSITIVES FOR ALL EXPERIMENTS: "+total_false_positives/experiments);
+        System.out.println("AVERAGE # OF QUERIES WITH AT LEAST ONE FALSE POSITIVE FOR ALL EXPERIMENTS: "+total_false_positives_queries/experiments);
     }
 
     //main app

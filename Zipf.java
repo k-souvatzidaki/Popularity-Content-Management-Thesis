@@ -33,11 +33,6 @@ public class Zipf {
             total = total.add(getZipfVal(i));
             ranks_frequencies.put(total,i);
         }
-
-        //print all sums
-        for(Entry<BigDecimal,Integer> entry : ranks_frequencies.entrySet()) 
-            System.out.println("for rank = "+entry.getValue()+" sum = "+entry.getKey());
-
     }
 
     /* Get Zipf frequency value given a rank */
