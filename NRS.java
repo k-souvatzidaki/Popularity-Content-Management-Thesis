@@ -5,7 +5,7 @@ import java.math.RoundingMode;
 
 /* A Name Resolution System (NRS) */
 public class NRS {
-    final int experiments = 15; //total # of experiments
+    final int experiments = 10; //total # of experiments
 
     final double exponent =  0.8; //the Zipf distribution exponent
     final int total_ids = 10000; //the total number of content ids to be generated (n)
@@ -13,8 +13,8 @@ public class NRS {
     final int id_len = 4; //the length of ids in bytes
 
     final int total_naps = 20; //the total number of NAPs
-    final int bloom_size = 100; //the size of the bloom filters (m)
-    final int bloom_hashes = 1; //number of hash functions in the bloom filter (k)
+    final int bloom_size = 7000; //the size of the bloom filters (m)
+    final int bloom_hashes = 4; //number of hash functions in the bloom filter (k)
 
     int false_positives = 0;
     int false_positives_queries = 0;
@@ -63,6 +63,7 @@ public class NRS {
         int false_pos;
 
         for(int e=1; e <=experiments; e++) {
+            int false_populars = 0;
             false_positives = 0;
             false_positives_queries = 0;
             for(int k = 0; k < total_queries; k++) {
@@ -71,21 +72,25 @@ public class NRS {
                     temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
                 rank = zipf.getRank(temp); //get rank based on zipf value
                 id = ids.get(rank-1); counters[rank-1]++; //get id and increase counter
-    
+                
                 //query execution - check bloom filters for the id
                 false_pos = 0;
                 for(NAP nap: naps) {
                     if(nap.update().exists(id)) { //check if id exists in bloom filter
                         if(nap.isAttached(id) /*if id actually exists in NAP*/) break;
-                        else false_pos++;
+                        else {
+                            false_pos++;
+                            if(0 < rank && rank < 100) false_populars++;
+                        }
                     }
                 }
                 false_positives += false_pos; //update total false positives
                 if(false_pos > 0) false_positives_queries++;
             }
-            System.out.println("EXPERIMENT "+e+":");
+            //System.out.println("EXPERIMENT "+e+":");
             System.out.println("TOTAL FALSE POSITIVES: "+ false_positives);
-            System.out.println("TOTAL #QUERIES WITH AT LEAST ONE FALSE POSITIVE: "+ false_positives_queries+" OUT OF "+total_queries+" QUERIES\n");    
+            System.out.println("TOTAL FALSE POSITIVES FROM POPULAR IDS: "+ false_populars);
+            //System.out.println("TOTAL #QUERIES WITH AT LEAST ONE FALSE POSITIVE: "+ false_positives_queries+" OUT OF "+total_queries+" QUERIES\n");    
             total_false_positives+=false_positives;
             total_false_positives_queries+=false_positives_queries;
         }

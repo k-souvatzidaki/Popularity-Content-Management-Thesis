@@ -17,7 +17,6 @@ public class BloomFilter {
         functions_integers = new int[k]; //a random number for each hash function
         for(int i = 0; i < k; i++) {
             functions_integers[i] = new Random().nextInt(m);
-            System.out.println(functions_integers[i]);
         }
             
     }
@@ -26,7 +25,9 @@ public class BloomFilter {
        Returns false if the id DOESN'T exist in the filter (no false negatives) */
     public boolean exists(String id){
         for(int h = 0; h < k; h++) {
-            if(bloom[hash(id,functions_integers[h])]==false) return false;
+            int index = hash(id,functions_integers[h]);
+            //System.out.println(index);
+            if(bloom[index]==false) return false;
         }
         return true;
     }
@@ -35,7 +36,9 @@ public class BloomFilter {
     public void add(String id) {
         //compute all hash functions
         for(int h = 0; h < k; h++) {
-            bloom[hash(id,functions_integers[h])] = true;
+            int index = hash(id,functions_integers[h]);
+            //System.out.println(index);
+            bloom[index] = true;
         }
     }
     public void add(ArrayList<String> ids) {
@@ -68,10 +71,10 @@ public class BloomFilter {
         temp = new String(hash);
         
         //convert to integer in range [0,size-1]
-        BigInteger hashint = new BigInteger(1, hash); 
-        hashint.add(BigInteger.valueOf(function_integer));
+        BigInteger hashint = new BigInteger(1, hash);
         int value = hashint.intValue();
         if(value < 0) value*=-1;
+        value += function_integer; //function k
         value = value % m; //in range
         
         return value;
