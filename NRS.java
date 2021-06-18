@@ -2,24 +2,25 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import utils.*;
 
 /* A Name Resolution System (NRS) */
 public class NRS {
-    final int experiments = 10; //total # of experiments
-
+    final int experiments = 100; //total # of experiments
     final double exponent =  0.8; //the Zipf distribution exponent
     final int total_ids = 10000; //the total number of content ids to be generated (n)
     final int total_queries = 100; //the number of queries to be generated
     final int id_len = 4; //the length of ids in bytes
 
-    final int total_naps = 20; //the total number of NAPs
-    final int bloom_size = 7000; //the size of the bloom filters (m)
-    final int bloom_hashes = 4; //number of hash functions in the bloom filter (k)
+    final int total_naps = 80; //the total number of NAPs
+    final int bloom_size = 250; //the size of the bloom filters (m)
+    final int bloom_hashes = 1; //number of hash functions in the bloom filter (k)
 
     int false_positives = 0;
     int false_positives_queries = 0;
     int total_false_positives = 0;
     int total_false_positives_queries = 0;
+    int total_false_populars = 0;
     NAP[] naps; //all NAPs
     ArrayList<String> ids; //list of all content ids
     int[] counters; //total queries per rank/id
@@ -62,6 +63,7 @@ public class NRS {
         Zipf zipf = new Zipf(exponent,total_ids); //Zipfian distribution for popularity aware query generation
         int false_pos;
 
+        //100 experiments per k
         for(int e=1; e <=experiments; e++) {
             int false_populars = 0;
             false_positives = 0;
@@ -80,23 +82,22 @@ public class NRS {
                         if(nap.isAttached(id) /*if id actually exists in NAP*/) break;
                         else {
                             false_pos++;
-                            if(0 < rank && rank < 100) false_populars++;
+                            if(rank < 250) false_populars++;
                         }
                     }
                 }
                 false_positives += false_pos; //update total false positives
                 if(false_pos > 0) false_positives_queries++;
             }
-            //System.out.println("EXPERIMENT "+e+":");
-            System.out.println("TOTAL FALSE POSITIVES: "+ false_positives);
-            System.out.println("TOTAL FALSE POSITIVES FROM POPULAR IDS: "+ false_populars);
-            //System.out.println("TOTAL #QUERIES WITH AT LEAST ONE FALSE POSITIVE: "+ false_positives_queries+" OUT OF "+total_queries+" QUERIES\n");    
             total_false_positives+=false_positives;
             total_false_positives_queries+=false_positives_queries;
+            total_false_populars += false_populars;
         }
-
+        System.out.println("FOR k= "+bloom_hashes);
         System.out.println("AVERAGE # OF FALSE POSITIVES FOR ALL EXPERIMENTS: "+total_false_positives/experiments);
-        System.out.println("AVERAGE # OF QUERIES WITH AT LEAST ONE FALSE POSITIVE FOR ALL EXPERIMENTS: "+total_false_positives_queries/experiments);
+        System.out.println("AVERAGE % OF FALSE POSITIVES FROM POPULAR IDS FOR ALL EXPERIMENTS: "+((total_false_populars/experiments)*100)/(total_false_positives/experiments));
+        System.out.println("AVERAGE # OF QUERIES WITH AT LEAST ONE FALSE POSITIVE (FALSE POSITIVE RATE) FOR ALL EXPERIMENTS: "+total_false_positives_queries/experiments+"\n");
+        
     }
 
     //main app

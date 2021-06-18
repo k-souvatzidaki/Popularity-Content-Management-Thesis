@@ -1,8 +1,8 @@
+package utils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.NavigableMap;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 
 /* Zipf's distribution implementation */
 public class Zipf {
