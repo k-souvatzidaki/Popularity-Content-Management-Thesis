@@ -20,9 +20,9 @@ public class NAP {
     }
 
     /* Attach a content id to this NAP */
-    public void add_content(String id){
+    public void add_content(String id,int pop){
         content_ids.add(id);
-        bloom.add(id);
+        bloom.add(id,pop);
     }
 
     /* Remove a content id from this NAP */
@@ -52,7 +52,7 @@ public class NAP {
     }
 
     /* Update with content located on this NAP */
-    public BloomFilter update() {
+    public WeightedBloomFilter update() {
         return bloom;
     }
 

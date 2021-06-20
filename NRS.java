@@ -15,8 +15,8 @@ public class NRS {
     final int total_naps = 20; //the total number of NAPs
     final int m = 1; //bits per id in bloom filter
     final int bloom_size = (total_ids/total_naps) * m; //the size of the bloom filters
-    final int bloom_hashes = 1; //number of hash functions in the bloom filter (k)
-    final int top_pop = 0;
+    final int bloom_hashes = 10; //number of hash functions in the bloom filter (k)
+    final int top_pop = 10000;
 
     int false_positives = 0;
     int false_positives_queries = 0;
@@ -49,11 +49,11 @@ public class NRS {
                 i = i-1; //id exists, generate new
                 continue;
             }
-            if(i > top_pop) {
+            //if(i > top_pop) {
                 //only add the non-popular ids to a Random NAP's bloom filter
                 int rand_index = rand.nextInt(total_naps);
-                naps[rand_index].add_content(id);
-            }
+                naps[rand_index].add_content(id,i);
+            //}
         }
         //initialize counters for total queries per rank
         counters = new int[total_ids];
@@ -78,15 +78,15 @@ public class NRS {
                     temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
                 rank = zipf.getRank(temp); //get rank based on zipf value
 
-                if(rank <= top_pop) {
-                    continue;
-                }
+                //if(rank <= top_pop) {
+                //    continue;
+                //}
                 id = ids.get(rank-1); counters[rank-1]++; //get id and increase counter
                 
                 //query execution - check bloom filters for the id
                 false_pos = 0;
                 for(NAP nap: naps) {
-                    if(nap.update().exists(id)) { //check if id exists in bloom filter
+                    if(nap.update().exists(id,rank)) { //check if id exists in bloom filter
                         if(nap.isAttached(id) /*if id actually exists in NAP*/) break;
                         else {
                             false_pos++;
