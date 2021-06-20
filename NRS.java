@@ -12,9 +12,11 @@ public class NRS {
     final int total_queries = 100; //the number of queries to be generated
     final int id_len = 4; //the length of ids in bytes
 
-    final int total_naps = 80; //the total number of NAPs
-    final int bloom_size = 250; //the size of the bloom filters (m)
+    final int total_naps = 20; //the total number of NAPs
+    final int m = 1; //bits per id in bloom filter
+    final int bloom_size = (total_ids/total_naps) * m; //the size of the bloom filters
     final int bloom_hashes = 1; //number of hash functions in the bloom filter (k)
+    final int top_pop = 0;
 
     int false_positives = 0;
     int false_positives_queries = 0;
@@ -34,7 +36,7 @@ public class NRS {
     public void prepare() {
         //Initialize Network Access Points
         naps = new NAP[total_naps];
-        for(int n = 0; n <total_naps; n++ ) naps[n] = new NAP(bloom_size,bloom_hashes,1,Integer.toString(n));
+        for(int n = 0; n <total_naps; n++ ) naps[n] = new NAP(bloom_size,bloom_hashes,1,Integer.toString(n),top_pop);
 
         //Generate random content IDs and evenly distribute them to NAPs
         ids = new ArrayList<String>();
@@ -47,9 +49,11 @@ public class NRS {
                 i = i-1; //id exists, generate new
                 continue;
             }
-            //add the id to a Random NAP
-            int rand_index = rand.nextInt(total_naps);
-            naps[rand_index].add_content(id);
+            if(i > top_pop) {
+                //only add the non-popular ids to a Random NAP's bloom filter
+                int rand_index = rand.nextInt(total_naps);
+                naps[rand_index].add_content(id);
+            }
         }
         //initialize counters for total queries per rank
         counters = new int[total_ids];
@@ -73,6 +77,10 @@ public class NRS {
                 while(temp.compareTo(zipf.getZipfVal(total_ids)) < 0)
                     temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
                 rank = zipf.getRank(temp); //get rank based on zipf value
+
+                if(rank <= top_pop) {
+                    continue;
+                }
                 id = ids.get(rank-1); counters[rank-1]++; //get id and increase counter
                 
                 //query execution - check bloom filters for the id

@@ -4,18 +4,19 @@ import utils.*;
 /* A Network Access Point (NAP) */
 public class NAP {
 
-    BloomFilter bloom; //bloom filter for specifying content attached to the NAP
+    WeightedBloomFilter bloom; //bloom filter for specifying content attached to the NAP
     ArrayList<String> content_ids; //content ids attached to the NAP
-    int total_removals,update_factor;
+    int total_removals,update_factor,top_pop;
     String id;
 
     //constructor 
-    public NAP(int bloom_size, int bloom_hashes, int update_factor, String id) {
+    public NAP(int bloom_size, int bloom_hashes, int update_factor, String id,int top_pop) {
         content_ids = new ArrayList<String>();
-        bloom = new BloomFilter(bloom_size,bloom_hashes);
+        bloom = new WeightedBloomFilter(bloom_size,bloom_hashes,top_pop);
         this.update_factor = update_factor;
         total_removals = 0;
         this.id = id;
+        this.top_pop = top_pop;
     }
 
     /* Attach a content id to this NAP */

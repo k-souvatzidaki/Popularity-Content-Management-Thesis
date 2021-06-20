@@ -7,7 +7,7 @@ import java.util.*;
 /* A Bloom Filter data structure for content IDs */
 public class BloomFilter {
 
-    private boolean[] bloom;
+    protected boolean[] bloom;
     private int m,k;
     private int[] functions_integers;
 
