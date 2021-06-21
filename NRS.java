@@ -7,7 +7,7 @@ import utils.*;
 /* A Name Resolution System (NRS) */
 public class NRS {
     final int experiments = 100; //total # of experiments
-    final double exponent =  0.8; //the Zipf distribution exponent
+    final double exponent =  0.6; //the Zipf distribution exponent
     final int total_ids = 10000; //the total number of content ids to be generated (n)
     final int total_queries = 100; //the number of queries to be generated
     final int id_len = 4; //the length of ids in bytes
@@ -16,13 +16,14 @@ public class NRS {
     final int m = 1; //bits per id in bloom filter
     final int bloom_size = (total_ids/total_naps) * m; //the size of the bloom filters
     final int bloom_hashes = 10; //number of hash functions in the bloom filter (k)
-    final int top_pop = 10000;
+    int top_pop;
+    Zipf zipf;
+    final BigDecimal top_popularity_percent = new BigDecimal("0.8");
 
     int false_positives = 0;
     int false_positives_queries = 0;
     int total_false_positives = 0;
     int total_false_positives_queries = 0;
-    int total_false_populars = 0;
     NAP[] naps; //all NAPs
     ArrayList<String> ids; //list of all content ids
     int[] counters; //total queries per rank/id
@@ -34,6 +35,10 @@ public class NRS {
 
     /* Prepare the simulation: create NAPs, create contend IDs, attach IDs to NAPs  */
     public void prepare() {
+        zipf = new Zipf(exponent,total_ids); //Zipfian distribution for popularity aware query generation
+        //get # of top ranks to be considered popular 
+        top_pop = zipf.getRank(top_popularity_percent);
+
         //Initialize Network Access Points
         naps = new NAP[total_naps];
         for(int n = 0; n <total_naps; n++ ) naps[n] = new NAP(bloom_size,bloom_hashes,1,Integer.toString(n),top_pop);
@@ -64,12 +69,9 @@ public class NRS {
        Execute many experiments for each #_naps */
     public void start() {
         BigDecimal temp; int rank; String id;
-        Zipf zipf = new Zipf(exponent,total_ids); //Zipfian distribution for popularity aware query generation
         int false_pos;
-
         //100 experiments per k
         for(int e=1; e <=experiments; e++) {
-            int false_populars = 0;
             false_positives = 0;
             false_positives_queries = 0;
             for(int k = 0; k < total_queries; k++) {
@@ -90,7 +92,6 @@ public class NRS {
                         if(nap.isAttached(id) /*if id actually exists in NAP*/) break;
                         else {
                             false_pos++;
-                            if(rank < 250) false_populars++;
                         }
                     }
                 }
@@ -99,11 +100,10 @@ public class NRS {
             }
             total_false_positives+=false_positives;
             total_false_positives_queries+=false_positives_queries;
-            total_false_populars += false_populars;
         }
         System.out.println("FOR k= "+bloom_hashes);
+        System.out.println("Top "+top_popularity_percent.multiply(new BigDecimal("100.0"))+"% of queries done on top "+top_pop+" content ids");
         System.out.println("AVERAGE # OF FALSE POSITIVES FOR ALL EXPERIMENTS: "+total_false_positives/experiments);
-        System.out.println("AVERAGE % OF FALSE POSITIVES FROM POPULAR IDS FOR ALL EXPERIMENTS: "+((total_false_populars/experiments)*100)/(total_false_positives/experiments));
         System.out.println("AVERAGE # OF QUERIES WITH AT LEAST ONE FALSE POSITIVE (FALSE POSITIVE RATE) FOR ALL EXPERIMENTS: "+total_false_positives_queries/experiments+"\n");
         
     }

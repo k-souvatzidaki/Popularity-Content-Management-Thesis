@@ -31,6 +31,7 @@ public class Zipf {
         total = new BigDecimal("0.0");
         for(int i = 1; i <=n; i++) {
             total = total.add(getZipfVal(i));
+            //System.out.println(i + " = "+total);
             ranks_frequencies.put(total,i);
         }
     }
