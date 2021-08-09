@@ -6,48 +6,32 @@ import utils.*;
 
 /* A Name Resolution System (NRS) */
 public class NRS {
-    final int experiments = 100; //total # of experiments
-    final double exponent = 0.8; //the Zipf distribution exponent
-    final int total_ids = 10000; //the total number of content ids to be generated (n)
-    final int total_queries = 100; //the number of queries to be generated
-    final int id_len = 4; //the length of ids in bytes
-
-    final int total_naps = 20; //the total number of NAPs
-    final int m = 4; //bits per id in bloom filter
-    final BigDecimal top_popularity_percent = new BigDecimal("0.5");
-    int bloom_size = (total_ids/total_naps) * m; //the size of the bloom filters
-    final int bloom_hashes = 1; //number of hash functions in the bloom filter (k)
-    int top_pop;
-    Zipf zipf;
+    static final double exponent = 0.8; //the Zipf distribution exponent
+    static final int total_ids = 10000; //the total number of content ids to be generated (n)
+    static final int total_queries = 200; //the number of queries to be generated
+    static final int id_len = 4; //the length of ids in bytes
+    static final int total_naps = 20; //the total number of NAPs
+    static final BigDecimal top_popularity_percent = new BigDecimal("1.0");
+    static final Zipf zipf =  new Zipf(exponent,total_ids); //Zipfian distribution for popularity aware query generation;
+    static final int top_pop = zipf.getRank(top_popularity_percent); //get # of top ranks to be considered popular 
+    static final IdGenerator gen = new IdGenerator(id_len); // generates 4 byte string ids
+    static final Random rand = new Random(); // to get random NAP 
     
+    static int m,k; //bits per id in bloom filter, number of hashes
+    static int bloom_size; //the size of the bloom filters
+    static int false_positives;
+    static int total_false_positives = 0;
+    static NAP[] naps; //all NAPs
+    static ArrayList<String> ids; //list of all content ids
 
-    int false_positives = 0;
-    int false_positives_queries = 0;
-    int total_false_positives = 0;
-    int total_false_positives_queries = 0;
-    NAP[] naps; //all NAPs
-    ArrayList<String> ids; //list of all content ids
-    int[] counters; //total queries per rank/id
-
-    public NRS() {
-        prepare();
-        start();
-    }
 
     /* Prepare the simulation: create NAPs, create contend IDs, attach IDs to NAPs  */
-    public void prepare() {
-        zipf = new Zipf(exponent,total_ids); //Zipfian distribution for popularity aware query generation
-        //get # of top ranks to be considered popular 
-        top_pop = zipf.getRank(top_popularity_percent);
-
-        //Initialize Network Access Points
+    public static void prepare() {
+        //Initialize Network Attachment Points
         naps = new NAP[total_naps];
-        for(int n = 0; n <total_naps; n++ ) naps[n] = new NAP(bloom_size,bloom_hashes,1,Integer.toString(n),top_pop);
-
+        for(int n = 0; n <total_naps; n++ ) naps[n] = new NAP(bloom_size,k,1,Integer.toString(n),top_pop);
         //Generate random content IDs and evenly distribute them to NAPs
         ids = new ArrayList<String>();
-        IdGenerator gen = new IdGenerator(id_len); // generates 4 byte string ids
-        Random rand = new Random(); // to get random NAP 
         for(int i = 0; i <total_ids; i++) {
             String id = gen.generate();
             if(!ids.contains(id)) ids.add(id);
@@ -58,53 +42,54 @@ public class NRS {
             int rand_index = rand.nextInt(total_naps);
             naps[rand_index].add_content(id,i);
         }
-        //initialize counters for total queries per rank
-        counters = new int[total_ids];
     }
 
 
     /* Start the simulation: generate queries for random ids based on Zipf frequency distribution 
        Execute many experiments for each #_naps */
-    public void start() {
+    public static void start() {
         BigDecimal temp; int rank; String id;
         int false_pos;
-        //100 experiments per k
-        for(int e=1; e <=experiments; e++) {
-            false_positives = 0;
-            false_positives_queries = 0;
-            for(int k = 0; k < total_queries; k++) {
-                temp = new BigDecimal("0.0");
-                while(temp.compareTo(zipf.getZipfVal(total_ids)) < 0)
-                    temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
-                rank = zipf.getRank(temp); //get rank based on zipf value
-
-                id = ids.get(rank-1); counters[rank-1]++; //get id and increase counter
+        false_positives = 0;
+        for(int q = 0; q < total_queries; q++) {
+            temp = new BigDecimal("0.0");
+            while(temp.compareTo(zipf.getZipfVal(total_ids)) < 0)
+                temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
+            rank = zipf.getRank(temp); //get rank based on zipf value
+            id = ids.get(rank-1); //get id
                 
-                //query execution - check bloom filters for the id
-                false_pos = 0;
-                for(NAP nap: naps) {
-                    if(nap.update().exists(id,rank)) { //check if id exists in bloom filter
-                        if(nap.isAttached(id) /*if id actually exists in NAP*/) break;
-                        else {
-                            false_pos++;
-                        }
-                    }
+            //query execution - check bloom filters for the id
+            false_pos = 0;
+            for(NAP nap: naps) {
+                if(nap.update().exists(id,rank)) { //check if id exists in bloom filter
+                    if(nap.isAttached(id) /*if id actually exists in NAP*/) break;
+                    else false_pos++;
                 }
-                false_positives += false_pos; //update total false positives
-                if(false_pos > 0) false_positives_queries++;
             }
-            total_false_positives+=false_positives;
-            total_false_positives_queries+=false_positives_queries;
+            false_positives += false_pos; //update total false positives
         }
-        System.out.println("FOR k= "+bloom_hashes);
-        System.out.println("Top "+top_popularity_percent.multiply(new BigDecimal("100.0"))+"% of queries done on top "+top_pop+" content ids");
-        System.out.println("AVERAGE # OF FALSE POSITIVES FOR ALL EXPERIMENTS: "+total_false_positives/experiments);
-        System.out.println("AVERAGE # OF QUERIES WITH AT LEAST ONE FALSE POSITIVE (FALSE POSITIVE RATE) FOR ALL EXPERIMENTS: "+total_false_positives_queries/experiments+"\n");
-        
+        //System.out.println("False positives of experiment = "+false_positives);
+        total_false_positives+=false_positives;
     }
 
     //main app
     public static void main(String[] args) {
         new NRS();
-    }
+        int[] k_values = {1,2,4,6,8,10,11,12};
+        int[] m_values = {1,2,4,6,8,10,12,14};
+        //for each k, for each m, create new NRS and do experiment x number 0f experiments
+        for(int k_val = 0; k_val < k_values.length; k_val++) {
+            NRS.k = k_values[k_val];
+            for(int m_val = 0; m_val < m_values.length; m_val++) {
+                NRS.m = m_values[m_val];
+                bloom_size = (total_ids/total_naps) * m;
+                int experiments = 0; 
+                do {
+                    prepare();
+                    start();
+                    experiments++;
+                }while(experiments < 20);
+                System.out.println("k = "+NRS.k+", m = "+NRS.m +" FP = "+NRS.total_false_positives/20);
+                NRS.total_false_positives = 0;
+    }}}
 }

@@ -78,7 +78,7 @@ public class BloomFilter {
         value += function_integer; //function k
         value = value % m; //in range
         
-        return value;
+        return Math.abs(value);
     }
 
     /* toString method */
