@@ -8,7 +8,7 @@ import utils.*;
 public class NRS {
     static final double exponent = 0.8; //the Zipf distribution exponent
     static final int total_ids = 10000; //the total number of content ids to be generated (n)
-    static final int total_queries = 200; //the number of queries to be generated
+    static final int total_queries = 500; //the number of queries to be generated
     static final int id_len = 4; //the length of ids in bytes
     static final int total_naps = 20; //the total number of NAPs
     static final BigDecimal top_popularity_percent = new BigDecimal("1.0");
@@ -16,6 +16,7 @@ public class NRS {
     static final int top_pop = zipf.getRank(top_popularity_percent); //get # of top ranks to be considered popular 
     static final IdGenerator gen = new IdGenerator(id_len); // generates 4 byte string ids
     static final Random rand = new Random(); // to get random NAP 
+    static final boolean ZIPF = false;
     
     static int m,k; //bits per id in bloom filter, number of hashes
     static int bloom_size; //the size of the bloom filters
@@ -53,9 +54,17 @@ public class NRS {
         false_positives = 0;
         for(int q = 0; q < total_queries; q++) {
             temp = new BigDecimal("0.0");
-            while(temp.compareTo(zipf.getZipfVal(total_ids)) < 0)
-                temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
-            rank = zipf.getRank(temp); //get rank based on zipf value
+            //select an ID to query
+            //with Zipf distribution
+            if(ZIPF) {
+                while(temp.compareTo(zipf.getZipfVal(total_ids)) < 0)
+                    temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
+                rank = zipf.getRank(temp); //get rank based on zipf value
+            }
+            //with uniform distribution
+            else {
+                rank = rand.nextInt(total_ids)+1;
+            }
             id = ids.get(rank-1); //get id
                 
             //query execution - check bloom filters for the id
@@ -88,8 +97,8 @@ public class NRS {
                     prepare();
                     start();
                     experiments++;
-                }while(experiments < 20);
-                System.out.println("k = "+NRS.k+", m = "+NRS.m +" FP = "+NRS.total_false_positives/20);
+                }while(experiments < 40);
+                System.out.println("k = "+NRS.k+", m = "+NRS.m +" FP = "+NRS.total_false_positives/40);
                 NRS.total_false_positives = 0;
     }}}
 }
