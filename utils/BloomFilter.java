@@ -15,11 +15,11 @@ public class BloomFilter {
         bloom = new boolean[m]; //initialized with false
         this.m = m;
         this.k = k;
+
         functions_integers = new int[k]; //a random number for each hash function
         for(int i = 0; i < k; i++) {
-            functions_integers[i] = new Random().nextInt(m);
+            functions_integers[i] = new Random().nextInt(Integer.MAX_VALUE);
         }
-            
     }
 
     /* Returns true if the id MIGHT exist in the filter (false positives)
@@ -27,7 +27,7 @@ public class BloomFilter {
     public boolean exists(String id){
         for(int h = 0; h < k; h++) {
             int index = hash(id,functions_integers[h]);
-            //System.out.println(index);
+            //System.out.println("id = "+id+" : " +index);
             if(bloom[index]==false) return false;
         }
         return true;

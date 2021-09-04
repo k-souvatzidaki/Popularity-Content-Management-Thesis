@@ -6,15 +6,13 @@ public class NAP {
 
     WeightedBloomFilter bloom; //bloom filter for specifying content attached to the NAP
     ArrayList<String> content_ids; //content ids attached to the NAP
-    int total_removals,update_factor,top_pop;
+    int top_pop;
     String id;
 
     //constructor 
-    public NAP(int bloom_size, int bloom_hashes, int update_factor, String id,int top_pop) {
+    public NAP(int bloom_size, int bloom_hashes, String id,int top_pop) {
         content_ids = new ArrayList<String>();
         bloom = new WeightedBloomFilter(bloom_size,bloom_hashes,top_pop);
-        this.update_factor = update_factor;
-        total_removals = 0;
         this.id = id;
         this.top_pop = top_pop;
     }
@@ -23,17 +21,6 @@ public class NAP {
     public void add_content(String id,int pop){
         content_ids.add(id);
         bloom.add(id,pop);
-    }
-
-    /* Remove a content id from this NAP */
-    public void remove_content(String id) {
-        content_ids.remove(id);
-        total_removals++;
-        if(total_removals > update_factor) { //recreate the bloom filter
-            total_removals = 0;
-            bloom.removeAll();
-            bloom.add(content_ids);
-        }
     }
 
     /* Get # of total content ids in this NAP */

@@ -8,7 +8,7 @@ import utils.*;
 public class NRS {
     static final double exponent = 0.8; //the Zipf distribution exponent
     static final int total_ids = 10000; //the total number of content ids to be generated (n)
-    static final int total_queries = 500; //the number of queries to be generated
+    static final int total_queries = 1000; //the number of queries to be generated
     static final int id_len = 4; //the length of ids in bytes
     static final int total_naps = 20; //the total number of NAPs
     static final BigDecimal top_popularity_percent = new BigDecimal("1.0");
@@ -16,7 +16,7 @@ public class NRS {
     static final int top_pop = zipf.getRank(top_popularity_percent); //get # of top ranks to be considered popular 
     static final IdGenerator gen = new IdGenerator(id_len); // generates 4 byte string ids
     static final Random rand = new Random(); // to get random NAP 
-    static final boolean ZIPF = false;
+    static final boolean ZIPF = true;
     
     static int m,k; //bits per id in bloom filter, number of hashes
     static int bloom_size; //the size of the bloom filters
@@ -30,9 +30,10 @@ public class NRS {
     public static void prepare() {
         //Initialize Network Attachment Points
         naps = new NAP[total_naps];
-        for(int n = 0; n <total_naps; n++ ) naps[n] = new NAP(bloom_size,k,1,Integer.toString(n),top_pop);
+        for(int n = 0; n <total_naps; n++ ) naps[n] = new NAP(bloom_size,k,Integer.toString(n),top_pop);
         //Generate random content IDs and evenly distribute them to NAPs
         ids = new ArrayList<String>();
+        int rand_index = 0;
         for(int i = 0; i <total_ids; i++) {
             String id = gen.generate();
             if(!ids.contains(id)) ids.add(id);
@@ -40,7 +41,7 @@ public class NRS {
                 i = i-1; //id exists, generate new
                 continue;
             }
-            int rand_index = rand.nextInt(total_naps);
+            rand_index = rand.nextInt(total_naps);
             naps[rand_index].add_content(id,i);
         }
     }
@@ -52,18 +53,19 @@ public class NRS {
         BigDecimal temp; int rank; String id;
         int false_pos;
         false_positives = 0;
+        rank = 1;
         for(int q = 0; q < total_queries; q++) {
-            temp = new BigDecimal("0.0");
             //select an ID to query
             //with Zipf distribution
             if(ZIPF) {
+                temp = new BigDecimal("0.0");
                 while(temp.compareTo(zipf.getZipfVal(total_ids)) < 0)
                     temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
                 rank = zipf.getRank(temp); //get rank based on zipf value
             }
             //with uniform distribution
             else {
-                rank = rand.nextInt(total_ids)+1;
+                rank = rand.nextInt(total_ids)+1; //get uniform rank
             }
             id = ids.get(rank-1); //get id
                 
@@ -71,20 +73,20 @@ public class NRS {
             false_pos = 0;
             for(NAP nap: naps) {
                 if(nap.update().exists(id,rank)) { //check if id exists in bloom filter
-                    if(nap.isAttached(id) /*if id actually exists in NAP*/) break;
+                    if(nap.isAttached(id) /*if id actually exists in NAP */) break;
                     else false_pos++;
                 }
             }
             false_positives += false_pos; //update total false positives
         }
-        //System.out.println("False positives of experiment = "+false_positives);
         total_false_positives+=false_positives;
     }
 
+    
     //main app
     public static void main(String[] args) {
         new NRS();
-        int[] k_values = {1,2,4,6,8,10,11,12};
+        int[] k_values = {1,2,4,6,8,10};
         int[] m_values = {1,2,4,6,8,10,12,14};
         //for each k, for each m, create new NRS and do experiment x number 0f experiments
         for(int k_val = 0; k_val < k_values.length; k_val++) {
@@ -97,8 +99,8 @@ public class NRS {
                     prepare();
                     start();
                     experiments++;
-                }while(experiments < 40);
-                System.out.println("k = "+NRS.k+", m = "+NRS.m +" FP = "+NRS.total_false_positives/40);
+                }while(experiments < 10);
+                System.out.println("k = "+NRS.k+", m = "+NRS.m +" total FP = "+NRS.total_false_positives/10);
                 NRS.total_false_positives = 0;
     }}}
 }
