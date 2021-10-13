@@ -9,7 +9,7 @@ public class BloomFilter {
 
     protected boolean[] bloom;
     private int m,k;
-    private int[] functions_integers;
+    protected int[] functions_integers;
 
     public BloomFilter(int m,int k) {
         bloom = new boolean[m]; //initialized with false
@@ -32,7 +32,7 @@ public class BloomFilter {
         }
         return true;
     }
-
+    
     /* Add id(s) in the filter */
     public void add(String id) {
         //compute all hash functions
@@ -46,7 +46,8 @@ public class BloomFilter {
         for(String id : ids) this.add(id);
     }
 
-    /* remove all idd from the bloom filter */
+
+    /* remove all ids from the bloom filter */
     public void removeAll() {
         bloom = new boolean[m];
     }

@@ -10,9 +10,9 @@ public class NAP {
     String id;
 
     //constructor 
-    public NAP(int bloom_size, int bloom_hashes, String id,int top_pop) {
+    public NAP(int bloom_size, int bloom_hashes, String id,int top_pop,int k_unpop) {
         content_ids = new ArrayList<String>();
-        bloom = new WeightedBloomFilter(bloom_size,bloom_hashes,top_pop);
+        bloom = new WeightedBloomFilter(bloom_size,bloom_hashes,top_pop,k_unpop);
         this.id = id;
         this.top_pop = top_pop;
     }

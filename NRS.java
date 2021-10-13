@@ -11,12 +11,14 @@ public class NRS {
     static final int total_queries = 1000; //the number of queries to be generated
     static final int id_len = 4; //the length of ids in bytes
     static final int total_naps = 20; //the total number of NAPs
-    static final BigDecimal top_popularity_percent = new BigDecimal("1.0");
+    static final BigDecimal top_popularity_percent = new BigDecimal("0.7");
     static final Zipf zipf =  new Zipf(exponent,total_ids); //Zipfian distribution for popularity aware query generation;
     static final int top_pop = zipf.getRank(top_popularity_percent); //get # of top ranks to be considered popular 
     static final IdGenerator gen = new IdGenerator(id_len); // generates 4 byte string ids
     static final Random rand = new Random(); // to get random NAP 
     static final boolean ZIPF = true;
+    static final int k_unpop = 11;
+    static final boolean FULL_MAP = true;
     
     static int m,k; //bits per id in bloom filter, number of hashes
     static int bloom_size; //the size of the bloom filters
@@ -30,7 +32,7 @@ public class NRS {
     public static void prepare() {
         //Initialize Network Attachment Points
         naps = new NAP[total_naps];
-        for(int n = 0; n <total_naps; n++ ) naps[n] = new NAP(bloom_size,k,Integer.toString(n),top_pop);
+        for(int n = 0; n <total_naps; n++ ) naps[n] = new NAP(bloom_size,k,Integer.toString(n),top_pop,k_unpop);
         //Generate random content IDs and evenly distribute them to NAPs
         ids = new ArrayList<String>();
         int rand_index = 0;
@@ -82,12 +84,12 @@ public class NRS {
         total_false_positives+=false_positives;
     }
 
-    
+
     //main app
     public static void main(String[] args) {
         new NRS();
-        int[] k_values = {1,2,4,6,8,10};
-        int[] m_values = {1,2,4,6,8,10,12,14};
+        int[] k_values = {11,12,14,16};
+        int[] m_values = {14};
         //for each k, for each m, create new NRS and do experiment x number 0f experiments
         for(int k_val = 0; k_val < k_values.length; k_val++) {
             NRS.k = k_values[k_val];
@@ -99,8 +101,8 @@ public class NRS {
                     prepare();
                     start();
                     experiments++;
-                }while(experiments < 10);
-                System.out.println("k = "+NRS.k+", m = "+NRS.m +" total FP = "+NRS.total_false_positives/10);
+                }while(experiments < 5);
+                System.out.println("k = "+NRS.k+", m = "+NRS.m +" total FP = "+NRS.total_false_positives/5);
                 NRS.total_false_positives = 0;
     }}}
 }
