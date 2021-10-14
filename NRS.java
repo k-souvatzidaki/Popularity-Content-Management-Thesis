@@ -70,7 +70,11 @@ public class NRS {
                 rank = rand.nextInt(total_ids)+1; //get uniform rank
             }
             id = ids.get(rank-1); //get id
-                
+            
+            //if a full mapping array is used, skip queries for popular content
+            if(FULL_MAP) {
+                if(rank < top_pop) continue;
+            }
             //query execution - check bloom filters for the id
             false_pos = 0;
             for(NAP nap: naps) {
@@ -88,7 +92,7 @@ public class NRS {
     //main app
     public static void main(String[] args) {
         new NRS();
-        int[] k_values = {11,12,14,16};
+        int[] k_values = {11};
         int[] m_values = {14};
         //for each k, for each m, create new NRS and do experiment x number 0f experiments
         for(int k_val = 0; k_val < k_values.length; k_val++) {
