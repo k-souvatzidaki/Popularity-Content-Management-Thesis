@@ -11,19 +11,20 @@ public class NRS {
     static final int total_queries = 1000; //the number of queries to be generated
     static final int id_len = 4; //the length of ids in bytes
     static final int total_naps = 20; //the total number of NAPs
-    static final BigDecimal top_popularity_percent = new BigDecimal("0.7");
+
+    // static final BigDecimal top_popularity_percent = new BigDecimal("0.7");
+    static final int top_pop = 100; // zipf.getRank(top_popularity_percent); //get # of top ranks to be considered popular 
+    static final int k_unpop = 1;
+
     static final Zipf zipf =  new Zipf(exponent,total_ids); //Zipfian distribution for popularity aware query generation;
-    static final int top_pop = zipf.getRank(top_popularity_percent); //get # of top ranks to be considered popular 
     static final IdGenerator gen = new IdGenerator(id_len); // generates 4 byte string ids
     static final Random rand = new Random(); // to get random NAP 
     static final boolean ZIPF = true;
-    static final int k_unpop = 11;
-    static final boolean FULL_MAP = true;
+    static final boolean FULL_MAP = false;
     
-    static int m,k; //bits per id in bloom filter, number of hashes
-    static int bloom_size; //the size of the bloom filters
-    static int false_positives;
-    static int total_false_positives = 0;
+    static int bloom_size,k; //bits per bloom filter, number of hashes
+    static double false_positives;
+    static double total_false_positives = 0;
     static NAP[] naps; //all NAPs
     static ArrayList<String> ids; //list of all content ids
 
@@ -63,13 +64,13 @@ public class NRS {
                 temp = new BigDecimal("0.0");
                 while(temp.compareTo(zipf.getZipfVal(total_ids)) < 0)
                     temp = new BigDecimal(Math.random()).setScale(32,RoundingMode.HALF_EVEN); //a random number (1>temp>minimum zipf value)
-                rank = zipf.getRank(temp); //get rank based on zipf value
+                rank = zipf.getRank(temp); 
             }
             //with uniform distribution
             else {
-                rank = rand.nextInt(total_ids)+1; //get uniform rank
+                rank = rand.nextInt(total_ids)+1; 
             }
-            id = ids.get(rank-1); //get id
+            id = ids.get(rank-1); 
             
             //if a full mapping array is used, skip queries for popular content
             if(FULL_MAP) {
@@ -78,35 +79,42 @@ public class NRS {
             //query execution - check bloom filters for the id
             false_pos = 0;
             for(NAP nap: naps) {
-                if(nap.update().exists(id,rank)) { //check if id exists in bloom filter
+                if(nap.update().exists(id,rank)) { 
                     if(nap.isAttached(id) /*if id actually exists in NAP */) break;
                     else false_pos++;
                 }
             }
-            false_positives += false_pos; //update total false positives
+            false_positives += false_pos; 
         }
-        total_false_positives+=false_positives;
+        total_false_positives += false_positives;
     }
 
 
     //main app
     public static void main(String[] args) {
         new NRS();
-        int[] k_values = {11};
-        int[] m_values = {14};
-        //for each k, for each m, create new NRS and do experiment x number 0f experiments
-        for(int k_val = 0; k_val < k_values.length; k_val++) {
-            NRS.k = k_values[k_val];
-            for(int m_val = 0; m_val < m_values.length; m_val++) {
-                NRS.m = m_values[m_val];
-                bloom_size = (total_ids/total_naps) * m;
+        int[] k_values = {1};
+        double[] fp_values = {0.1, 0.01, 0.001, 0.0001, 0.00001};
+        //for each k, for each desired false positive ratio, evaluate m, create new NRS and do experiments
+        for(int k_val : k_values) {
+            NRS.k = k_val;
+            System.out.println("====================== k = "+NRS.k+" ======================");
+            for(double fp_val : fp_values) {
+                bloom_size = (int)Math.round( -(total_ids / total_naps) / Math.log(1-fp_val) );
+                System.out.println(" -- desired false positive = "+fp_val);
+                System.out.println(" -- Bloom filter size = "+bloom_size);
+                System.out.println(" -- m (bits/item) = "+ bloom_size / (total_ids/total_naps));
                 int experiments = 0; 
                 do {
                     prepare();
                     start();
                     experiments++;
-                }while(experiments < 5);
-                System.out.println("k = "+NRS.k+", m = "+NRS.m +" total FP = "+NRS.total_false_positives/5);
+                } while(experiments < 5);
+                double false_positive_ratio = ((NRS.total_false_positives/5)/ (total_naps/2))/ total_queries; // on average half the NAPs are queried per request
+                System.out.println(" -- result false positive ratio: " + false_positive_ratio);
+                System.out.println("===================================================");
+                // System.out.println("k = "+NRS.k+", size = "+bloom_size+" total FP = "+(NRS.total_false_positives/5)/20);
                 NRS.total_false_positives = 0;
     }}}
+
 }

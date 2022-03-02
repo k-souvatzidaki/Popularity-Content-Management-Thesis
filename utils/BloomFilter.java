@@ -8,12 +8,12 @@ import java.util.*;
 public class BloomFilter {
 
     protected boolean[] bloom;
-    private int m,k;
+    private int size,k;
     protected int[] functions_integers;
 
-    public BloomFilter(int m,int k) {
-        bloom = new boolean[m]; //initialized with false
-        this.m = m;
+    public BloomFilter(int size,int k) {
+        bloom = new boolean[size]; //initialized with false
+        this.size = size;
         this.k = k;
 
         functions_integers = new int[k]; //a random number for each hash function
@@ -49,7 +49,7 @@ public class BloomFilter {
 
     /* remove all ids from the bloom filter */
     public void removeAll() {
-        bloom = new boolean[m];
+        bloom = new boolean[size];
     }
 
     /* Bloom filter bit array getter */
@@ -77,7 +77,7 @@ public class BloomFilter {
         int value = hashint.intValue();
         if(value < 0) value*=-1;
         value += function_integer; //function k
-        value = value % m; //in range
+        value = value % size; //in range
         
         return Math.abs(value);
     }

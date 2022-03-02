@@ -6,8 +6,8 @@ public class WeightedBloomFilter extends BloomFilter {
 
     private int top_pop, k_unpop; 
 
-    public WeightedBloomFilter(int m,int k,int top_pop,int k_unpop) {
-        super(m,k);
+    public WeightedBloomFilter(int size,int k,int top_pop,int k_unpop) {
+        super(size,k);
         this.top_pop = top_pop;
         this.k_unpop = k_unpop;
     }
